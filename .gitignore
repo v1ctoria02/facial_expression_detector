@@ -1,0 +1,8 @@
+data/
+
+*.py[cod]
+*.log
+*.ipynb
+
+# Mac
+**/.DS_Store
