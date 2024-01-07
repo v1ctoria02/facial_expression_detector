@@ -17,7 +17,7 @@ def load_images_from_folder(path: str, batch_size: int = 64) -> tuple[DataLoader
         [
             transforms.Grayscale(),
             transforms.RandomRotation(10),
-            transforms.RandomCrop((48, 48)),
+            transforms.RandomCrop(cfg.IMAGE_SIZE),
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,)),
         ]

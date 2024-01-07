@@ -1,17 +1,27 @@
 import argparse
 import logging
 import os
-import sys
 
 import torch
 
 import config as cfg
+
+# from csvfile import validate_to_csv
 from model import BestNet
 from train import evaluate, load_images_from_folder, train
-from csvfile import validate_to_csv
+from validation import validate_to_csv, webcam_input
 
 LOGGER = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+
+
+def load_model_from_path(model_path: str, model):
+    """Load the trained model"""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    LOGGER.info("Loading model from %s as %s", model_path, type(model))
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    model.eval()
 
 
 def main(args: argparse.Namespace):
@@ -40,17 +50,23 @@ def main(args: argparse.Namespace):
         LOGGER.info("Saving model to %s", args.model_path)
         torch.save(model.state_dict(), args.model_path)
     else:
-        validate_to_csv(args.images_path, args.model_path, model)
+        load_model_from_path(args.model_path, model)
+        if args.images_path is None:
+            ...
+            webcam_input(model)
+        else:
+            validate_to_csv(args.images_path, model)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the model or classify images and output scores to a CSV file.")
-    parser.add_argument("--validate", dest="is_validate", action="store_true", 
-                        help="Validate the given model on the given image folder")
-    parser.add_argument("--model", dest="model_path", type=str, required=True,
-                        help="Path to save or load the model file")
-    parser.add_argument("--folder", dest="images_path", type=str, required="--validate" in sys.argv,
-                        help="Path to the folder containing images")
+    parser.add_argument(
+        "--validate", dest="is_validate", action="store_true", help="Validate the given model on the given image folder"
+    )
+    parser.add_argument(
+        "--model", dest="model_path", type=str, required=True, help="Path to save or load the model file"
+    )
+    parser.add_argument("--folder", dest="images_path", type=str, help="Path to the folder containing images")
     args = parser.parse_args()
 
     # Setup logging

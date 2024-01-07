@@ -1,4 +1,6 @@
-data/
+# Dataset
+data/train
+data/validation
 
 *.py[cod]
 *.log
