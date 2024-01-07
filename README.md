@@ -13,3 +13,11 @@ pip install -r requirements.txt
 ```
 python main.py
 ````
+
+## evaluate model on custom images:
+
+```bash
+python main.py --validate --model <PATH_TO_MODEL> --folder <PATH_TO_IMAGES>
+# e.g.
+python main.py --validate --model data/model --folder imagecsv
+```

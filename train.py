@@ -1,43 +1,54 @@
 import logging
 import os
 
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
+import config as cfg
+
 LOGGER = logging.getLogger(__name__)
 
+
 def load_images_from_folder(path: str, batch_size: int = 64) -> tuple[DataLoader, DataLoader]:
-    transform = transforms.Compose([
-        transforms.Grayscale(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    train_transform = transforms.Compose(
+        [
+            transforms.Grayscale(),
+            transforms.RandomRotation(10),
+            transforms.RandomCrop((48, 48)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,)),
+        ]
+    )
+    test_transform = transforms.Compose(
+        [transforms.Grayscale(), transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+    )
+
     train_path = os.path.join(path, "train")
     test_path = os.path.join(path, "validation")
-    train_dataset = datasets.ImageFolder(train_path, transform=transform)
-    test_dataset = datasets.ImageFolder(test_path, transform=transform)
+    train_dataset = datasets.ImageFolder(train_path, transform=train_transform)
+    test_dataset = datasets.ImageFolder(test_path, transform=test_transform)
+
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return train_loader, test_loader
 
-def train(model: nn.Module, input_loader: DataLoader, epoch: int = 3, use_gpu: bool = False):
+
+def train(model: nn.Module, input_loader: DataLoader, epochs: int = 3, use_gpu: bool = False):
     # Create NeuralNetwork object
     num_of_params = sum(parameter.numel() for parameter in model.parameters())
     LOGGER.info("Number of NN parameters: %s", num_of_params)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=cfg.LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
 
     if use_gpu:
-        model.cuda()
         criterion.cuda()
 
     losses = []
-    for e in range(epoch):
+    for e in range(epochs):
         model.train()
         for batch_idx, [images_batch, labels_batch] in tqdm(enumerate(input_loader), "Batch progress"):
             if use_gpu:
@@ -62,24 +73,22 @@ def train(model: nn.Module, input_loader: DataLoader, epoch: int = 3, use_gpu: b
             # Record the loss
             losses.append(loss.item())
 
-            if batch_idx % 100 == 0:
-                LOGGER.info("Epoch: %d, Batch: %d, Loss: %.4f", epoch, batch_idx, loss.item())
-        LOGGER.info("Average loss for %d epoch: %.4f", e, sum(losses)/len(losses))
+        LOGGER.info("Average loss after %d epoch: %.4f", e, sum(losses) / len(losses))
 
-    plt.plot(losses)
-    plt.xlabel('Step')
-    plt.ylabel('Loss')
-    plt.show()
 
-def evaluate(model: nn.Module, test_loader: DataLoader):
+def evaluate(model: nn.Module, test_loader: DataLoader, use_gpu: bool = True):
     model.eval()
     correct = 0
     total = 0
     with torch.no_grad():
-        for data, target in test_loader:
-            output = model(data)
+        for images_batch, labels_batch in test_loader:
+            if use_gpu:
+                images_batch = images_batch.cuda()
+                labels_batch = labels_batch.cuda()
+
+            output = model(images_batch)
             _, predicted = torch.max(output.data, 1)
-            total += target.size(0)
-            correct += (predicted == target).sum().item()
+            total += labels_batch.size(0)
+            correct += (predicted == labels_batch).sum().item()
     accuracy = 100 * correct / total
-    LOGGER.info(f'Accuracy on the test set: {accuracy:.2f}%')
+    LOGGER.info(f"Accuracy on the test set: {accuracy:.2f}%")
