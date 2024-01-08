@@ -13,7 +13,7 @@ from config import IMAGE_SIZE, LABELS
 LOGGER = logging.getLogger(__name__)
 
 
-def predict_expression(frame, model: nn.Module, face_points: tuple = None) -> str:
+def predict_expression(frame, model: nn.Module, face_points: tuple = None) -> tuple[str, list[float]]:
     # Convert to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 

@@ -5,8 +5,6 @@ import os
 import torch
 
 import config as cfg
-
-# from csvfile import validate_to_csv
 from model import BestNet
 from train import evaluate, load_images_from_folder, train
 from validation import validate_to_csv, webcam_input
@@ -31,10 +29,9 @@ def main(args: argparse.Namespace):
     train_loader, test_loader = load_images_from_folder(images_path, batch_size=32)
     LOGGER.info("Number of images: %d", len(train_loader))
 
-    # model = ConvolutionalNetwork()
-    # model = Net(6)
-    # model = ResNet(6)
-    model = BestNet(6)
+    num_classes = len(cfg.LABELS)
+    # model = ResNet(num_classes)
+    model = BestNet(num_classes)
 
     if not args.is_validate:
         # train
@@ -52,7 +49,6 @@ def main(args: argparse.Namespace):
     else:
         load_model_from_path(args.model_path, model)
         if args.images_path is None:
-            ...
             webcam_input(model)
         else:
             validate_to_csv(args.images_path, model)
