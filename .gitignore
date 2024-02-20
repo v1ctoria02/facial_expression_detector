@@ -1,10 +1,23 @@
 # Dataset
-data/train
-data/validation
+data/train*
+data/test*
+data/validation*
 
+# Jupyter Notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Python cache and logs
 *.py[cod]
 *.log
-*.ipynb
+
+# Virtual environment
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
 
 # Mac
 **/.DS_Store
