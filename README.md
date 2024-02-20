@@ -36,7 +36,7 @@ python fed/main.py --model data/models/ExpressionNet_fer
 ```bash
 python fed/main.py --validate --model <PATH_TO_MODEL> --folder <PATH_TO_IMAGES>
 # e.g.
-python fed/main.py --validate --model data/models/ExpressionNet_fer --folder imagecsv
+python fed/main.py --validate --model data/models/ExpressionNet_fer --folder data/uni_validation_set
 ```
 
 ## Evaluate model on webcam
