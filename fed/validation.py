@@ -12,7 +12,7 @@ from torchcam.methods import SmoothGradCAMpp
 from fed.config import IMAGE_SIZE, LABELS, RECTANGLE_COLOR, TEXT_COLOR
 
 _logger = logging.getLogger(__name__)
-
+FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
 def _predict_expression(
     frame: np.ndarray, model: nn.Module, use_gradcam: bool = True, rectangle: tuple | None = None
@@ -25,6 +25,8 @@ def _predict_expression(
         (x, y, w, h) = rectangle
         # Crop image
         face_img = gray[y : y + h, x : x + w]
+    else:
+        face_img = gray
 
     # Transform image
     face_img = cv2.resize(face_img, IMAGE_SIZE)
@@ -78,8 +80,6 @@ def webcam_input(model: nn.Module) -> None:
         _logger.info("Video length: %d", length)
     _logger.info("Video info: size: %dx%d, FPS: %d", width, height, fps)
 
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-
     while True:
         # Capture frame-by-frame
         _ret, frame = cap.read()
@@ -88,7 +88,7 @@ def webcam_input(model: nn.Module) -> None:
             break
 
         # Detect the faces using built-in CV2 function
-        face_rois = face_cascade.detectMultiScale(frame, scaleFactor=1.05, minNeighbors=4, minSize=(36, 36))
+        face_rois = FACE_CASCADE.detectMultiScale(frame, scaleFactor=1.05, minNeighbors=4, minSize=(36, 36))
 
         # Detect rectangle of each face in the frame
         for rectangle in face_rois:
@@ -119,16 +119,19 @@ def webcam_input(model: nn.Module) -> None:
 
 def validate_to_csv(images_path: str, model: nn.Module) -> None:
     # List to hold all rows for the CSV
-    csv_rows = ["filepath", *LABELS, "predicted_label"]
+    csv_rows = [["filepath", *LABELS, "predicted_label"]]
     # Process images
     for image_name in os.listdir(images_path):
         if image_name.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
             # Load image
             image_path = os.path.join(images_path, image_name)
             image = cv2.imread(image_path)
-            # Predict facial expression
-            predicted_class, rounded_probabilities = _predict_expression(image, model, use_gradcam=False)
-
+            # Detect the faces using built-in CV2 function
+            face_rois = FACE_CASCADE.detectMultiScale(image, scaleFactor=1.05, minNeighbors=4, minSize=(36, 36))
+            if len(face_rois) != 1:
+                predicted_class, rounded_probabilities = _predict_expression(image, model, use_gradcam=False)
+            else:
+                predicted_class, rounded_probabilities = _predict_expression(image, model, use_gradcam=False, rectangle=face_rois[0])
             csv_rows.append([image_path, *rounded_probabilities, predicted_class])
 
     csv_file_path = os.path.join(images_path, "classification_scores.csv")
