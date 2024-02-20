@@ -14,6 +14,7 @@ from fed.config import IMAGE_SIZE, LABELS, RECTANGLE_COLOR, TEXT_COLOR
 _logger = logging.getLogger(__name__)
 FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
+
 def _predict_expression(
     frame: np.ndarray, model: nn.Module, use_gradcam: bool = True, rectangle: tuple | None = None
 ) -> tuple[str, list[float]]:
@@ -131,7 +132,9 @@ def validate_to_csv(images_path: str, model: nn.Module) -> None:
             if len(face_rois) != 1:
                 predicted_class, rounded_probabilities = _predict_expression(image, model, use_gradcam=False)
             else:
-                predicted_class, rounded_probabilities = _predict_expression(image, model, use_gradcam=False, rectangle=face_rois[0])
+                predicted_class, rounded_probabilities = _predict_expression(
+                    image, model, use_gradcam=False, rectangle=face_rois[0]
+                )
             csv_rows.append([image_path, *rounded_probabilities, predicted_class])
 
     csv_file_path = os.path.join(images_path, "classification_scores.csv")
