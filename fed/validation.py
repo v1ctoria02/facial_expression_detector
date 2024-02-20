@@ -119,9 +119,10 @@ def webcam_input(model: nn.Module) -> None:
 
 
 def validate_to_csv(images_path: str, model: nn.Module) -> None:
-    # List to hold all rows for the CSV
+    """Validate the dataset provided by university and save the classification scores to a CSV file."""
     csv_rows = [["filepath", *LABELS, "predicted_label"]]
-    # Process images
+
+    correct = 0
     for image_name in os.listdir(images_path):
         if image_name.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
             # Load image
@@ -135,11 +136,13 @@ def validate_to_csv(images_path: str, model: nn.Module) -> None:
                 predicted_class, rounded_probabilities = _predict_expression(
                     image, model, use_gradcam=False, rectangle=face_rois[0]
                 )
+            if predicted_class in image_name:
+                correct += 1
             csv_rows.append([image_path, *rounded_probabilities, predicted_class])
 
     csv_file_path = os.path.join(images_path, "classification_scores.csv")
     with open(csv_file_path, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(csv_rows)
-
-    _logger.info("Classification scores have been saved to %s", csv_file_path)
+    accuracy = correct / (len(csv_rows) - 1) * 100
+    _logger.info("Accuracy %.2f%%. Classification scores have been saved to %s", accuracy, csv_file_path)

@@ -20,11 +20,15 @@ MODELS = {
 }
 
 
-def get_model_from_path(model_path: str) -> type[nn.Module]:
+def get_model_from_path(model_path: str) -> nn.Module:
     """Return the model class based on the model path."""
     filename = os.path.basename(model_path)
     model_name = filename.split("_")[0]
-    return MODELS.get(model_name, ExpressionNet)
+    model = MODELS.get(model_name)
+    if model is None:
+        raise ValueError(f"Model {model_name} not found in MODELS")
+    num_classes = len(cfg.LABELS)
+    return model(num_classes)
 
 
 def load_model_from_path(model_path: str, model: nn.Module) -> None:
@@ -39,15 +43,13 @@ def load_model_from_path(model_path: str, model: nn.Module) -> None:
 def main() -> None:
     """Train the model or classify images and output scores to a CSV file."""
     # Initialize model
-    num_classes = len(cfg.LABELS)
-    ModelType = get_model_from_path(args.model_path)
-    model = ModelType(num_classes)
+    model = get_model_from_path(args.model_path)
 
     if not args.is_validate:
         # Load images
         images_path = os.path.join(ROOT_DIR, "data")
         _logger.info("Loading images from %s", images_path)
-        train_loader, test_loader = load_images_from_folder(images_path, batch_size=32)
+        train_loader, test_loader = load_images_from_folder(images_path)
         _logger.info("Number of images: %d", len(train_loader))
         # Train
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -61,7 +63,6 @@ def main() -> None:
         if device == "cuda":
             # Move the model back to the CPU
             model = model.to("cpu")
-
         # Save the model
         _logger.info("Saving model to %s", args.model_path)
         torch.save(model.state_dict(), args.model_path)
@@ -102,7 +103,7 @@ if __name__ == "__main__":
 
     # Setup logging
     log_level = logging.INFO
-    f_handler = logging.FileHandler("facial_expression_detector.log", mode="w")
+    f_handler = logging.FileHandler("facial_expression_detector.log", mode="w", encoding="utf-8")
     f_handler.setLevel(log_level)
     s_handler = logging.StreamHandler()
     s_handler.setLevel(log_level)

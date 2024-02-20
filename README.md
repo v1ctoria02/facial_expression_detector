@@ -2,9 +2,9 @@
 
 Convolutional Neural Network model to recognize facial expressions.
 
-Trained and validated on [FER2013 dataset](https://www.kaggle.com/datasets/msambare/fer2013) - not provided.
+Trained and validated on [FER2013 dataset](https://www.kaggle.com/datasets/msambare/fer2013) and combination of other datasets - not provided.
 
-Place `train/` and `validation/` directories in `data/`
+Place `train/` and (`test/` or `validation/`) directories in `data/`
 
 ## Install requirements to python environment:
 
@@ -25,7 +25,7 @@ To train the model and save it to a specific path, run the following command:
 ```bash
 python fed/main.py --model <PATH_TO_MODEL>
 # e.g.
-python fed/main.py --model data/models/ExpressionNet_2024-02-21
+python fed/main.py --model data/models/ExpressionNet_fer
 ```
 
 > [!NOTE]
@@ -36,7 +36,7 @@ python fed/main.py --model data/models/ExpressionNet_2024-02-21
 ```bash
 python fed/main.py --validate --model <PATH_TO_MODEL> --folder <PATH_TO_IMAGES>
 # e.g.
-python fed/main.py --validate --model data/models/ExpressionNet_2024-02-20 --folder imagecsv
+python fed/main.py --validate --model data/models/ExpressionNet_fer --folder imagecsv
 ```
 
 ## Evaluate model on webcam
@@ -46,7 +46,7 @@ To run a webcam facial expression recognition don't specify `--folder`
 ```bash
 python fed/main.py --validate --model <PATH_TO_MODEL>
 # e.g.
-python fed/main.py --validate --model data/models/ExpressionNet_2024-02-20
+python fed/main.py --validate --model data/models/ExpressionNet_2fer
 ```
 
 ## More info

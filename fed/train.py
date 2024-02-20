@@ -13,18 +13,18 @@ import fed.config as cfg
 _logger = logging.getLogger(__name__)
 
 
-def load_images_from_folder(path: str, batch_size: int = 64) -> tuple[DataLoader, DataLoader]:
+def load_images_from_folder(path: str) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
         transforms.Grayscale(),
-        transforms.RandomRotation(10),
+        transforms.RandomRotation(cfg.RANDOM_ROTATION),
         transforms.RandomCrop(cfg.IMAGE_SIZE),
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,)),
+        transforms.Normalize(cfg.NORMALIZE_MEAN, cfg.NORMALIZE_STD),
     ])
     test_transform = transforms.Compose([
         transforms.Grayscale(),
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,)),
+        transforms.Normalize(cfg.NORMALIZE_MEAN, cfg.NORMALIZE_STD),
     ])
 
     train_path = os.path.join(path, "train")
@@ -35,8 +35,8 @@ def load_images_from_folder(path: str, batch_size: int = 64) -> tuple[DataLoader
     train_dataset = datasets.ImageFolder(train_path, transform=train_transform)
     test_dataset = datasets.ImageFolder(test_path, transform=test_transform)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=cfg.BATCH_SIZE, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=cfg.BATCH_SIZE, shuffle=False)
     return train_loader, test_loader
 
 
@@ -52,18 +52,15 @@ class EarlyStop:
 
     def __call__(self, model: nn.Module, value: float) -> bool:
         """Check if the validation loss is not improving."""
-        stop_check = (value < self.best_value) if self.less_is_better else (value > self.best_value)
-        if stop_check:
+        is_better = (value < self.best_value) if self.less_is_better else (value > self.best_value)
+        if is_better:
             self.best_value = value
             self.patience_counter = 0
             self.best_model = model.state_dict()
             return False
 
         self.patience_counter += 1
-        if self.patience_counter >= self.patience:
-            model.load_state_dict(self.best_model)
-            return True
-        return False
+        return self.patience_counter >= self.patience
 
 
 def train(
@@ -81,7 +78,7 @@ def train(
 
     # Learning rate scheduler - learning rate will decrease by a factor of gamma every step_size epochs
     lr_scheduler = StepLR(optimizer, step_size=cfg.LEARNING_RATE_DECAY_STEP, gamma=cfg.LEARNING_RATE_DECAY)
-    early_stop = EarlyStop()
+    early_stop = EarlyStop(patience=cfg.EARLY_STOP_PATIENCE)
 
     _logger.info(
         "Initializing `%s` training on %d epochs with `%s` optimizer with learning rate %.4f. "
@@ -99,6 +96,7 @@ def train(
     progress_bar = tqdm(range(epochs), "Training progress [epochs]", total=epochs, leave=False)
     for e in progress_bar:
         model.train()
+        losses: list[float] = []
         for images_batch, labels_batch in input_loader:
             if use_gpu:
                 images_batch = images_batch.cuda()
@@ -117,7 +115,8 @@ def train(
             # Add the gradients onto the model parameters as specified by the optimizer and the learning rate
             optimizer.step()
             # Record the loss
-            stats["train_loss"].append(loss.item())
+            losses.append(loss.item())
+        stats["train_loss"].append(sum(losses) / len(losses))
 
         training_loss = sum(stats["train_loss"]) / len(stats["train_loss"])
         if valid_loader is not None:
@@ -125,15 +124,18 @@ def train(
             validation_loss, accuracy = evaluate(model, valid_loader, use_gpu)
             stats["valid_loss"].append(validation_loss)
             stats["accuracy"].append(accuracy)
-            progress_bar.set_postfix({
-                "Accuracy": accuracy,
-                "Train loss": training_loss,
-                "Valid loss": sum(stats["valid_loss"]) / len(stats["valid_loss"]),
-            })
             if early_stop(model, validation_loss):
                 # Early stop if the validation loss is not improving
                 _logger.info("Early stopping after %d epochs", e + 1)
+                model.load_state_dict(early_stop.best_model)
                 break
+            progress_bar.set_postfix({
+                "Accuracy": accuracy,
+                "TrainLoss": training_loss,
+                "ValidLoss": validation_loss,
+                "LR": optimizer.param_groups[0]["lr"],
+                "Patience": f"{early_stop.patience_counter}/{early_stop.patience}",
+            })
         else:
             # If there is no validation set, just print the training loss
             progress_bar.set_postfix({"Training loss": training_loss})
