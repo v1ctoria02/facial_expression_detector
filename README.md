@@ -1,6 +1,10 @@
 # Facial expression generator
 
-Convolutional Neural Network model to recognize facial expression.
+Convolutional Neural Network model to recognize facial expressions.
+
+Trained and validated on [FER2013 dataset](https://www.kaggle.com/datasets/msambare/fer2013) - not provided.
+
+Place `train/` and `validation/` directories in `data/`
 
 ## Install requirements to python environment:
 
@@ -8,26 +12,45 @@ Convolutional Neural Network model to recognize facial expression.
 pip install -r requirements.txt
 ```
 
-## train and evaluate model:
+## Set PYTHONPATH if imported modules cannot be found
 
 ```bash
-python main.py --model <PATH_WHERE_TO_SAVE_TRAINED_MODEL>
-# e.g.
-python main.py --model data/model
+export PYTHONPATH=.
 ```
 
-## evaluate model on custom images:
+## Train the model:
+
+To train the model and save it to a specific path, run the following command:
 
 ```bash
-python main.py --validate --model <PATH_TO_MODEL> --folder <PATH_TO_IMAGES>
+python fed/main.py --model <PATH_TO_MODEL>
 # e.g.
-python main.py --validate --model data/model --folder imagecsv
+python fed/main.py --model data/models/ExpressionNet
 ```
 
-## Evaluate model on webcam video (Don't specify folder)
+> [!NOTE]
+> Model class name must be in model filename
+
+## Evaluate model on custom images:
 
 ```bash
-python main.py --validate --model <PATH_TO_MODEL>
+python fed/main.py --validate --model <PATH_TO_MODEL> --folder <PATH_TO_IMAGES>
 # e.g.
-python main.py --validate --model data/model
+python fed/main.py --validate --model data/models/ExpressionNet --folder imagecsv
+```
+
+## Evaluate model on webcam
+
+To run a webcam facial expression recognition don't specify `--folder`
+
+```bash
+python fed/main.py --validate --model <PATH_TO_MODEL>
+# e.g.
+python fed/main.py --validate --model data/models/ExpressionNet
+```
+
+## More info
+
+```bash
+python fed/main.py --help
 ```

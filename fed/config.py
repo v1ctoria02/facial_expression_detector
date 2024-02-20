@@ -1,0 +1,9 @@
+BATCH_SIZE = 32
+EPOCHS = 50
+LEARNING_RATE = 1e-2  # 1e-3
+LEARNING_RATE_DECAY = 3e-3  # 1e-4
+LEARNING_RATE_DECAY_STEP = 10
+LABELS = ["anger", "disgust", "fear", "happiness", "sadness", "surprise"]
+IMAGE_SIZE = (48, 48)
+RECTANGLE_COLOR = (255, 105, 65)  # BGR
+TEXT_COLOR = (255, 255, 255)  # BGR
