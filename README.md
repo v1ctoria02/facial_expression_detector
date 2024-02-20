@@ -1,4 +1,4 @@
-# Facial expression generator
+# Facial Expression Detection - CNN
 
 Convolutional Neural Network model to recognize facial expressions.
 
@@ -25,7 +25,7 @@ To train the model and save it to a specific path, run the following command:
 ```bash
 python fed/main.py --model <PATH_TO_MODEL>
 # e.g.
-python fed/main.py --model data/models/ExpressionNet
+python fed/main.py --model data/models/ExpressionNet_2024-02-21
 ```
 
 > [!NOTE]
@@ -36,7 +36,7 @@ python fed/main.py --model data/models/ExpressionNet
 ```bash
 python fed/main.py --validate --model <PATH_TO_MODEL> --folder <PATH_TO_IMAGES>
 # e.g.
-python fed/main.py --validate --model data/models/ExpressionNet --folder imagecsv
+python fed/main.py --validate --model data/models/ExpressionNet_2024-02-20 --folder imagecsv
 ```
 
 ## Evaluate model on webcam
@@ -46,7 +46,7 @@ To run a webcam facial expression recognition don't specify `--folder`
 ```bash
 python fed/main.py --validate --model <PATH_TO_MODEL>
 # e.g.
-python fed/main.py --validate --model data/models/ExpressionNet
+python fed/main.py --validate --model data/models/ExpressionNet_2024-02-20
 ```
 
 ## More info
